@@ -187,6 +187,23 @@ endef
 
 ##@ Bundle
 
+.PHONY: operator-sdk
+OSDK = ./bin/operator-sdk
+operator-sdk: ## Download operator-sdk locally if necessary.
+ifeq (,$(wildcard $(OSDK)))
+ifeq (,$(shell which operator-sdk 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OSDK)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OSDK) https://github.com/operator-framework/operator-sdk/releases/download/v1.8.0/operator-sdk_$${OS}_$${ARCH} ;\
+	chmod +x $(OSDK) ;\
+	}
+else
+OSDK = $(shell which operator-sdk)
+endif
+endif
+
 .PHONY: bundle
 bundle: bundle-hub bundle-dr-cluster ## Generate all bundle manifests and metadata, then validate generated files.
 
@@ -197,10 +214,10 @@ bundle-build: bundle-hub-build bundle-dr-cluster-build ## Build all bundle image
 bundle-push: bundle-hub-push bundle-dr-cluster-push ## Push all bundle images.
 
 .PHONY: bundle-hub
-bundle-hub: manifests kustomize ## Generate hub bundle manifests and metadata, then validate generated files.
+bundle-hub: manifests kustomize operator-sdk ## Generate hub bundle manifests and metadata, then validate generated files.
 	cd config/hub/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build --load_restrictor none config/hub/manifests | operator-sdk generate bundle -q --package=ramen-hub --overwrite --output-dir=config/hub/bundle --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate config/hub/bundle
+	$(KUSTOMIZE) build --load_restrictor none config/hub/manifests | $(OSDK) generate bundle -q --package=ramen-hub --overwrite --output-dir=config/hub/bundle --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(OSDK) bundle validate config/hub/bundle
 
 .PHONY: bundle-hub-build
 bundle-hub-build: bundle-hub ## Build the hub bundle image.
@@ -211,10 +228,10 @@ bundle-hub-push: ## Push the hub bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG_HUB)
 
 .PHONY: bundle-dr-cluster
-bundle-dr-cluster: manifests kustomize ## Generate dr-cluster bundle manifests and metadata, then validate generated files.
+bundle-dr-cluster: manifests kustomize operator-sdk ## Generate dr-cluster bundle manifests and metadata, then validate generated files.
 	cd config/dr_cluster/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build --load_restrictor none config/dr_cluster/manifests | operator-sdk generate bundle -q --package=ramen-dr-cluster --overwrite --output-dir=config/dr_cluster/bundle --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate config/dr_cluster/bundle
+	$(KUSTOMIZE) build --load_restrictor none config/dr_cluster/manifests | $(OSDK) generate bundle -q --package=ramen-dr-cluster --overwrite --output-dir=config/dr_cluster/bundle --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(OSDK) bundle validate config/dr_cluster/bundle
 
 .PHONY: bundle-dr-cluster-build
 bundle-dr-cluster-build: bundle-dr-cluster ## Build the dr-cluster bundle image.

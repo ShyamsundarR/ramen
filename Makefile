@@ -26,18 +26,21 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
+# IMAGE_TAG defines the tag name for the image, and is used to construct full image tags for bundle
+# and catalog images as well.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# example.com/tmp-sdk-bundle:$VERSION and example.com/tmp-sdk-catalog:$VERSION.
+# example.com/tmp-sdk-bundle:$IMAGE_TAG and example.com/tmp-sdk-catalog:$IMAGE_TAG.
 IMAGE_TAG_BASE ?= quay.io/ramendr/ramen
+IMAGE_TAG ?= latest
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG_HUB ?= $(IMAGE_TAG_BASE)-hub-operator-bundle:v$(VERSION)
-BUNDLE_IMG_DRCLUSTER ?= $(IMAGE_TAG_BASE)-dr-cluster-operator-bundle:v$(VERSION)
+BUNDLE_IMG_HUB ?= $(IMAGE_TAG_BASE)-hub-operator-bundle:$(IMAGE_TAG)
+BUNDLE_IMG_DRCLUSTER ?= $(IMAGE_TAG_BASE)-dr-cluster-operator-bundle:$(IMAGE_TAG)
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/ramendr/ramen-operator:latest
+IMG ?= $(IMAGE_TAG_BASE)-operator:$(IMAGE_TAG)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -243,7 +246,7 @@ endif
 BUNDLE_IMGS ?= $(BUNDLE_IMG_HUB),$(BUNDLE_IMG_DRCLUSTER)
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-operator-catalog:v$(VERSION)
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-operator-catalog:$(IMAGE_TAG)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
 ifneq ($(origin CATALOG_BASE_IMG), undefined)

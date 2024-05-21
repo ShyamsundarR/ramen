@@ -103,6 +103,7 @@ func (r *DRPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	secretsUtil := &util.SecretsUtil{Client: r.Client, APIReader: r.APIReader, Ctx: ctx, Log: log}
+
 	// DRPolicy is marked for deletion
 	if util.ResourceIsDeleted(drpolicy) &&
 		controllerutil.ContainsFinalizer(drpolicy, drPolicyFinalizerName) {
